@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres:
+    # image: registry.cn-hangzhou.aliyuncs.com/library/postgres:16
+    image: postgres:16
+    container_name: worksphere-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: worksphere
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    networks:
+      - worksphere-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: worksphere-app
+    ports:
+      - '3016:3016'
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-worksphere}
+      - NODE_ENV=production
+      - PORT=3016
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - worksphere-network
+
+networks:
+  worksphere-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
