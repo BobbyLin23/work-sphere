@@ -8,10 +8,11 @@ import './globals.css'
 
 const inter = Inter({
   subsets: ['latin'],
+  fallback: ['Arial', 'sans-serif'],
 })
 
 export const metadata: Metadata = {
-  title: 'Neo Desk',
+  title: 'Worksphere',
   description: 'AI-powered workspace.',
 }
 

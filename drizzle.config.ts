@@ -1,7 +1,9 @@
 import { defineConfig } from 'drizzle-kit'
 import { config } from 'dotenv'
 
-config({ path: '.env.local' })
+const path = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local'
+
+config({ path })
 
 export default defineConfig({
   dialect: 'postgresql',
