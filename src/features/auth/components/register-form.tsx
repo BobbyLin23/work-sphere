@@ -55,7 +55,7 @@ export function RegisterForm({ className }: React.ComponentPropsWithoutRef<'form
         },
         onSuccess: () => {
           toast.success('Registration successful')
-          router.push('/workspace')
+          router.push('/workspaces')
           setIsLoading(false)
         },
         onError: (ctx) => {
