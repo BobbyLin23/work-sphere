@@ -52,7 +52,7 @@ export function LoginForm({ className }: React.ComponentPropsWithoutRef<'form'>)
         },
         onSuccess: () => {
           toast.success('Login successful')
-          router.push('/workspace')
+          router.push('/workspaces')
           setIsLoading(false)
         },
         onError: (ctx) => {

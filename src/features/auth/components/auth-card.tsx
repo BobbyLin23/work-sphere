@@ -12,7 +12,7 @@ type AuthCardProps = {
 } & React.ComponentPropsWithoutRef<'div'>
 
 export const AuthCard = ({ children, className, variant = 'login', ...props }: AuthCardProps) => {
-  const { handleSocialLogin, isLoading } = useAuth()
+  const { handleSocialLogin, isSocialLoginLoading } = useAuth()
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
@@ -31,8 +31,8 @@ export const AuthCard = ({ children, className, variant = 'login', ...props }: A
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => handleSocialLogin('github')}
-                disabled={isLoading}
+                onClick={() => handleSocialLogin({ provider: 'github' })}
+                disabled={isSocialLoginLoading}
               >
                 <Icon name="mdi--github" className="mr-2 size-4" />
                 Login with Github
@@ -40,8 +40,8 @@ export const AuthCard = ({ children, className, variant = 'login', ...props }: A
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => handleSocialLogin('google')}
-                disabled={isLoading}
+                onClick={() => handleSocialLogin({ provider: 'google' })}
+                disabled={isSocialLoginLoading}
               >
                 <Icon name="mdi--google" className="mr-2 size-4" />
                 Login with Google

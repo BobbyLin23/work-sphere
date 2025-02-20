@@ -1,5 +1,9 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+
+import { Toaster } from '@/components/ui/sonner'
+import { QueryProvider } from '@/components/query-provider'
+
 import './globals.css'
 
 const inter = Inter({
@@ -18,7 +22,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={(inter.className, 'min-h-screen antialiased')}>{children}</body>
+      <body className={(inter.className, 'min-h-screen antialiased')}>
+        <QueryProvider>
+          <Toaster />
+          {children}
+        </QueryProvider>
+      </body>
     </html>
   )
 }
