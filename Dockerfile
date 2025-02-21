@@ -13,6 +13,9 @@ COPY . .
 
 # 构建应用
 ENV NEXT_TELEMETRY_DISABLED 1
+ARG BETTER_AUTH_URL
+ENV AUTH_URL=${BETTER_AUTH_URL}
+ENV NEXT_PUBLIC_AUTH_URL=${BETTER_AUTH_URL}
 RUN pnpm build
 
 # 生产阶段
@@ -23,24 +26,33 @@ WORKDIR /app
 # 设置环境变量
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
+ENV BETTER_AUTH_URL=${BETTER_AUTH_URL}
+ENV NEXT_PUBLIC_BETTER_AUTH_URL=${BETTER_AUTH_URL}
 
 # 添加非root用户
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
-RUN chown -R nextjs:nodejs /app
 
 # 从构建阶段复制必要文件
-COPY --from=builder --chown=nextjs:nodejs /app/next.config.js ./
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/api ./api
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
+
+# 仅安装生产依赖
+RUN npm install -g pnpm && \
+    pnpm install --prod
+
+# 复制构建产物
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+
+# 设置正确的权限
+RUN chown -R nextjs:nodejs /app
 
 # 切换到非root用户
 USER nextjs
 
 # 暴露端口
-EXPOSE 3000
+EXPOSE 3016
 
 # 启动应用
-CMD ["node", "server.js"]
+CMD ["pnpm", "start"]
