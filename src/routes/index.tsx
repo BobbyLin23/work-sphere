@@ -4,10 +4,23 @@ import {
   SignUpButton,
   UserButton,
 } from "@clerk/tanstack-react-start"
-import { createFileRoute } from "@tanstack/react-router"
+import { auth } from "@clerk/tanstack-react-start/server"
+import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createServerFn } from "@tanstack/react-start"
 import { Button } from "@/components/ui/button"
 
-export const Route = createFileRoute("/")({ component: App })
+const authStateFn = createServerFn().handler(async () => {
+  const { isAuthenticated, userId } = await auth()
+  if (!isAuthenticated) {
+    throw redirect({ to: "/sign-in/$" })
+  }
+  return { userId }
+})
+
+export const Route = createFileRoute("/")({
+  beforeLoad: async () => await authStateFn(),
+  component: App,
+})
 
 function App() {
   return (
