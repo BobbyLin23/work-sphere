@@ -1,7 +1,10 @@
 import { UserButton } from "@clerk/tanstack-react-start"
+import { getRouteApi } from "@tanstack/react-router"
+import { formatDistanceToNowStrict } from "date-fns"
 import { PlusIcon, UsersIcon } from "lucide-react"
 import { useState } from "react"
 import { BotDialog } from "@/components/bot-dialog"
+import { ChatAvatar } from "@/components/chat-avatar"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -13,6 +16,8 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -35,7 +40,10 @@ const userButtonAppearance = {
   },
 }
 
+const dashboardRoute = getRouteApi("/(dashboard)/_dashboard")
+
 export function AppSidebar() {
+  const chatList = dashboardRoute.useLoaderData()
   const [botDialogOpen, setBotDialogOpen] = useState(false)
 
   return (
@@ -62,7 +70,34 @@ export function AppSidebar() {
         </DropdownMenu>
         <BotDialog open={botDialogOpen} onOpenChange={setBotDialogOpen} />
       </SidebarHeader>
-      <SidebarContent />
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {chatList.map((chat) => (
+                <SidebarMenuItem key={chat.id}>
+                  <SidebarMenuButton size="lg" className="h-auto">
+                    <ChatAvatar seed={chat.avatar} />
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate font-medium">
+                          {chat.name}
+                        </span>
+                        <span className="shrink-0 text-muted-foreground text-xs">
+                          {formatDistanceToNowStrict(chat.lastMessageAt)}
+                        </span>
+                      </div>
+                      <span className="truncate text-muted-foreground text-xs">
+                        {chat.lastMessagePreview}
+                      </span>
+                    </div>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
