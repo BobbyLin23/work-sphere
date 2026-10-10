@@ -57,8 +57,21 @@ const emptyValues = () => ({
   avatar: nanoid(),
 })
 
-function BotDialog({ trigger }: { trigger: ReactElement }) {
-  const [open, setOpen] = useState(false)
+function BotDialog({
+  trigger,
+  open: openProp,
+  onOpenChange,
+}: {
+  trigger?: ReactElement
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = openProp ?? internalOpen
+  const setOpen = (next: boolean) => {
+    setInternalOpen(next)
+    onOpenChange?.(next)
+  }
   const router = useRouter()
   const createBotFn = useServerFn(createBot)
 
@@ -82,7 +95,7 @@ function BotDialog({ trigger }: { trigger: ReactElement }) {
         }
       }}
     >
-      <DialogTrigger render={trigger} />
+      {trigger && <DialogTrigger render={trigger} />}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>New bot</DialogTitle>

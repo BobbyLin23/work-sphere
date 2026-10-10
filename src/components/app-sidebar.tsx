@@ -1,8 +1,19 @@
 import { UserButton } from "@clerk/tanstack-react-start"
+import { PlusIcon, UsersIcon } from "lucide-react"
+import { useState } from "react"
+import { BotDialog } from "@/components/bot-dialog"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -25,8 +36,32 @@ const userButtonAppearance = {
 }
 
 export function AppSidebar() {
+  const [botDialogOpen, setBotDialogOpen] = useState(false)
+
   return (
     <Sidebar>
+      <SidebarHeader className="flex-row justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" size="icon" aria-label="New">
+                <PlusIcon />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end" className="w-auto min-w-48">
+            <DropdownMenuItem onClick={() => setBotDialogOpen(true)}>
+              <PlusIcon />
+              Create new bot
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <UsersIcon />
+              Create group chat
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <BotDialog open={botDialogOpen} onOpenChange={setBotDialogOpen} />
+      </SidebarHeader>
       <SidebarContent />
       <SidebarFooter>
         <SidebarMenu>
