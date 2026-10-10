@@ -1,7 +1,7 @@
 import { auth } from "@clerk/tanstack-react-start/server"
 import { createServerFn } from "@tanstack/react-start"
 import { db } from "@/db"
-import { bots, createBotSchema } from "@/db/schema"
+import { bots, chatMembers, chats, createBotSchema } from "@/db/schema"
 
 export const createBot = createServerFn({ method: "POST" })
   .validator(createBotSchema)
@@ -11,9 +11,16 @@ export const createBot = createServerFn({ method: "POST" })
       throw new Error("Unauthorized")
     }
 
-    const [bot] = await db
-      .insert(bots)
-      .values({ ...data, instructions: data.instructions || null, userId })
-      .returning()
-    return bot
+    return db.transaction(async (tx) => {
+      const [bot] = await tx
+        .insert(bots)
+        .values({ ...data, instructions: data.instructions || null, userId })
+        .returning()
+      const [chat] = await tx
+        .insert(chats)
+        .values({ userId, kind: "direct" })
+        .returning()
+      await tx.insert(chatMembers).values({ chatId: chat.id, botId: bot.id })
+      return bot
+    })
   })

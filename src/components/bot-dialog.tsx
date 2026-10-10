@@ -28,10 +28,26 @@ import { createBotSchema } from "@/db/schema"
 import { createBot } from "@/lib/bots"
 
 const JOB_PRESETS = [
-  "Research assistant",
-  "Code reviewer",
-  "Writing editor",
-  "Tutor",
+  {
+    job: "Research assistant",
+    instructions:
+      "Find and summarize reliable information on the topics I ask about. Cite sources for every claim, flag anything uncertain or conflicting, and keep answers concise.",
+  },
+  {
+    job: "Code reviewer",
+    instructions:
+      "Review the code I share for bugs, security issues, and readability. Point to the exact lines, explain why each issue matters, and suggest a concrete fix. Skip nitpicks unless I ask.",
+  },
+  {
+    job: "Writing editor",
+    instructions:
+      "Edit my writing for clarity, tone, and grammar. Keep my voice, explain major changes briefly, and ask what the audience is if it isn't clear.",
+  },
+  {
+    job: "Tutor",
+    instructions:
+      "Teach me step by step at my level. Explain concepts with simple examples, check my understanding with short questions, and let me try before giving the answer.",
+  },
 ]
 
 const emptyValues = () => ({
@@ -85,14 +101,17 @@ function BotDialog({ trigger }: { trigger: ReactElement }) {
           <div className="flex flex-wrap gap-2">
             {JOB_PRESETS.map((preset) => (
               <Button
-                key={preset}
+                key={preset.job}
                 type="button"
                 variant="outline"
                 size="sm"
                 className="rounded-full"
-                onClick={() => form.setFieldValue("job", preset)}
+                onClick={() => {
+                  form.setFieldValue("job", preset.job)
+                  form.setFieldValue("instructions", preset.instructions)
+                }}
               >
-                {preset}
+                {preset.job}
               </Button>
             ))}
           </div>
