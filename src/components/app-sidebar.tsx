@@ -1,10 +1,17 @@
 import { UserButton } from "@clerk/tanstack-react-start"
 import { getRouteApi, useNavigate } from "@tanstack/react-router"
 import { formatDistanceToNowStrict } from "date-fns"
-import { PlusIcon, SearchIcon, UsersIcon } from "lucide-react"
+import {
+  MoonIcon,
+  PlusIcon,
+  SearchIcon,
+  SunIcon,
+  UsersIcon,
+} from "lucide-react"
 import { useEffect, useState } from "react"
 import { BotDialog } from "@/components/bot-dialog"
 import { ChatAvatar } from "@/components/chat-avatar"
+import { useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
 import {
   Command,
@@ -79,6 +86,8 @@ export function AppSidebar() {
   const [botDialogOpen, setBotDialogOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const navigate = useNavigate()
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
 
   const openChat = (chatId: string) => {
     navigate({ href: `/chats/${chatId}` })
@@ -188,7 +197,17 @@ export function AppSidebar() {
               render={<div />}
               className="p-0 group-data-[collapsible=icon]:p-0!"
             >
-              <UserButton showName appearance={userButtonAppearance} />
+              <UserButton showName appearance={userButtonAppearance}>
+                <UserButton.MenuItems>
+                  <UserButton.Action
+                    label={isDark ? "Light mode" : "Dark mode"}
+                    labelIcon={
+                      isDark ? <SunIcon size={16} /> : <MoonIcon size={16} />
+                    }
+                    onClick={() => setTheme(isDark ? "light" : "dark")}
+                  />
+                </UserButton.MenuItems>
+              </UserButton>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
