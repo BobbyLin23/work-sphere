@@ -1,9 +1,3 @@
-import {
-  Show,
-  SignInButton,
-  SignUpButton,
-  UserButton,
-} from "@clerk/tanstack-react-start"
 import { auth } from "@clerk/tanstack-react-start/server"
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
@@ -28,7 +22,7 @@ const authStateFn = createServerFn().handler(async () => {
   return { userId }
 })
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/(dashboard)/_dashboard/")({
   beforeLoad: async () => await authStateFn(),
   loader: () => ({ seed: crypto.randomUUID() }),
   component: App,
@@ -39,19 +33,6 @@ function App() {
 
   return (
     <div className="flex min-h-svh flex-col gap-6 p-6">
-      <header className="flex items-center justify-end gap-2">
-        <Show when="signed-out">
-          <SignInButton>
-            <Button variant="outline">Sign in</Button>
-          </SignInButton>
-          <SignUpButton>
-            <Button>Sign up</Button>
-          </SignUpButton>
-        </Show>
-        <Show when="signed-in">
-          <UserButton />
-        </Show>
-      </header>
       <Empty>
         <EmptyHeader>
           <EmptyMedia>
