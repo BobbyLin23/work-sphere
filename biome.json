@@ -12,7 +12,8 @@
       "!**/package-lock.json",
       "!**/yarn.lock",
       "!**/routeTree.gen.ts",
-      "!**/.commandcode"
+      "!**/.commandcode",
+      "!**/.agents"
     ]
   },
   "formatter": {
