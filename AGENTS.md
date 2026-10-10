@@ -54,6 +54,19 @@ Biome enforces formatting. Do not hand-format against it.
 - Style with Tailwind utilities and the theme CSS variables in `src/styles.css`. Avoid hard-coded colors; use semantic tokens such as `bg-background` and `text-muted-foreground`.
 - Merge conditional classes with `cn` from `@/lib/utils`.
 
+## Forms
+
+- Build forms with TanStack Form (`useForm`, `form.Field`, `form.Subscribe`) and the shadcn field components (`FieldGroup`, `Field`, `FieldLabel`, `FieldError`). Do not hand-roll `div` + `Label` layouts.
+- Validate with Zod through a standard schema: pass it to `validators` (for example `validators: { onSubmit: schema }`). Do not write ad hoc validation functions.
+- Derive the schema from the Drizzle table with `createInsertSchema` from `drizzle-zod`, exported next to the table in `src/db/schema.ts`. Refine fields there (trim, min, max) and `.pick` only the fields the user submits. Use that one schema for both the form and the server function. Do not duplicate it.
+- Keep form field types free of `null`. Use a plain `z.string()` refinement for nullable text columns, and convert `""` to `null` in the server function.
+- Mark invalid fields with `data-invalid` on `Field` and `aria-invalid` on the control. Show `FieldError` only after the field is touched.
+- Submit buttons live in `DialogFooter`/outside the `<form>` when needed. Link them with `type="submit"` and `form="<form-id>"`. Show pending state with `Spinner` and `disabled` from `form.Subscribe` on `isSubmitting`. `Button` has no loading prop.
+- Reset the form with `form.reset(...)` when a dialog closes, so reopening starts clean.
+- Mutations are server functions: `createServerFn({ method: "POST" }).validator(schema).handler(...)`. Use `.validator`, not the deprecated `.inputValidator`. Call them from components with `useServerFn`, then `router.invalidate()` to refresh route data.
+- Read the user in the handler with `auth()` from `@clerk/tanstack-react-start/server` and throw if `!isAuthenticated`. Never accept `userId` from the client, and never include it in the input schema.
+- Run `pnpm exec biome check --write <files>` on only the files you changed. Do not run `pnpm check:write` across the repo, since it reformats the generated `src/components/ui/` files.
+
 ## Database
 
 Only use `pnpm db:push` to apply schema changes. Never generate or run migrations (`drizzle-kit generate` / `drizzle-kit migrate`).
