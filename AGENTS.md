@@ -14,6 +14,8 @@ Use `pnpm`. The dev server runs on port 3007.
 - `pnpm check`: Biome lint, format and assist checks (`pnpm check:write` to auto-fix)
 - `pnpm lint` / `pnpm format`: Biome lint only / format with write
 - `pnpm generate-routes`: regenerate `src/routeTree.gen.ts`
+- `pnpm db:push`: push the Drizzle schema in `src/db/schema.ts` to the database
+- `pnpm db:studio`: open Drizzle Studio
 
 Before finishing a change, run `pnpm typecheck` and `pnpm check`. There is no test runner configured.
 
@@ -51,6 +53,12 @@ Biome enforces formatting. Do not hand-format against it.
 - Use `lucide-react` for icons.
 - Style with Tailwind utilities and the theme CSS variables in `src/styles.css`. Avoid hard-coded colors; use semantic tokens such as `bg-background` and `text-muted-foreground`.
 - Merge conditional classes with `cn` from `@/lib/utils`.
+
+## Database
+
+Only use `pnpm db:push` to apply schema changes. Never generate or run migrations (`drizzle-kit generate` / `drizzle-kit migrate`).
+
+This is a development project. There is no backwards compatibility and the data is worthless. Prefer data loss: never backfill, migrate or preserve existing rows, and never spend effort on keeping old data working. Every schema change means a clean state.
 
 ## Routing
 
