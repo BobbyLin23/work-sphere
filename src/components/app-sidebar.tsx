@@ -1,5 +1,5 @@
 import { UserButton } from "@clerk/tanstack-react-start"
-import { getRouteApi, useNavigate } from "@tanstack/react-router"
+import { getRouteApi, useMatch, useNavigate } from "@tanstack/react-router"
 import { formatDistanceToNowStrict } from "date-fns"
 import {
   MoonIcon,
@@ -86,6 +86,10 @@ export function AppSidebar() {
   const [botDialogOpen, setBotDialogOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const navigate = useNavigate()
+  const activeChatId = useMatch({
+    from: "/(dashboard)/_dashboard/chats/$chatId",
+    shouldThrow: false,
+  })?.params.chatId
   const { resolvedTheme, setTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
 
@@ -179,6 +183,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     size="lg"
                     className="h-auto"
+                    isActive={chat.id === activeChatId}
                     tooltip={chat.name}
                     onClick={() => openChat(chat.id)}
                   >

@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as dashboardDashboardRouteImport } from './routes/(dashboard)/_dashboard'
-import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as SignUpSplatRouteImport } from './routes/sign-up.$'
 import { Route as dashboardDashboardIndexRouteImport } from './routes/(dashboard)/_dashboard/index'
@@ -18,11 +17,6 @@ import { Route as dashboardDashboardChatsChatIdRouteImport } from './routes/(das
 
 const dashboardDashboardRoute = dashboardDashboardRouteImport.update({
   id: '/(dashboard)/_dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiChatRoute = ApiChatRouteImport.update({
-  id: '/api/chat',
-  path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignInSplatRoute = SignInSplatRouteImport.update({
@@ -48,14 +42,12 @@ const dashboardDashboardChatsChatIdRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/api/chat': typeof ApiChatRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
   '/': typeof dashboardDashboardIndexRoute
   '/chats/$chatId': typeof dashboardDashboardChatsChatIdRoute
 }
 export interface FileRoutesByTo {
-  '/api/chat': typeof ApiChatRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
   '/': typeof dashboardDashboardIndexRoute
@@ -64,7 +56,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(dashboard)/_dashboard': typeof dashboardDashboardRouteWithChildren
-  '/api/chat': typeof ApiChatRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
   '/(dashboard)/_dashboard/': typeof dashboardDashboardIndexRoute
@@ -72,13 +63,12 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/api/chat' | '/sign-in/$' | '/sign-up/$' | '/' | '/chats/$chatId'
+  fullPaths: '/sign-in/$' | '/sign-up/$' | '/' | '/chats/$chatId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/api/chat' | '/sign-in/$' | '/sign-up/$' | '/' | '/chats/$chatId'
+  to: '/sign-in/$' | '/sign-up/$' | '/' | '/chats/$chatId'
   id:
     | '__root__'
     | '/(dashboard)/_dashboard'
-    | '/api/chat'
     | '/sign-in/$'
     | '/sign-up/$'
     | '/(dashboard)/_dashboard/'
@@ -87,7 +77,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   dashboardDashboardRoute: typeof dashboardDashboardRouteWithChildren
-  ApiChatRoute: typeof ApiChatRoute
   SignInSplatRoute: typeof SignInSplatRoute
   SignUpSplatRoute: typeof SignUpSplatRoute
 }
@@ -99,13 +88,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof dashboardDashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/chat': {
-      id: '/api/chat'
-      path: '/api/chat'
-      fullPath: '/api/chat'
-      preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign-in/$': {
@@ -154,7 +136,6 @@ const dashboardDashboardRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   dashboardDashboardRoute: dashboardDashboardRouteWithChildren,
-  ApiChatRoute: ApiChatRoute,
   SignInSplatRoute: SignInSplatRoute,
   SignUpSplatRoute: SignUpSplatRoute,
 }

@@ -14,7 +14,7 @@ function ChatPage() {
   return (
     <div className="flex h-svh flex-col">
       <ChatHeader name={chat.name} bot={chat.bot} />
-      <Chat key={chat.id} />
+      <Chat key={chat.id} chatId={chat.id} />
     </div>
   )
 }

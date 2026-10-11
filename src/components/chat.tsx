@@ -1,5 +1,11 @@
 import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport } from "ai"
+import {
+  useLoadTranscript,
+  useTriggerChatTransport,
+} from "@trigger.dev/sdk/chat/react"
+import { useServerFn } from "@tanstack/react-start"
+import type { UIMessage } from "ai"
+import type { workSphereChat } from "@/trigger/chat"
 import {
   Conversation,
   ConversationContent,
@@ -18,11 +24,54 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input"
+import {
+  loadChatTranscript,
+  mintChatAccessToken,
+  startChatSession,
+} from "@/queries/chat-agent"
 
-const transport = new DefaultChatTransport({ api: "/api/chat" })
+function Chat({ chatId }: { chatId: string }) {
+  const mintToken = useServerFn(mintChatAccessToken)
+  const startSession = useServerFn(startChatSession)
+  const loadTranscript = useServerFn(loadChatTranscript)
 
-function Chat() {
-  const { messages, sendMessage, status, stop } = useChat({ transport })
+  const transport = useTriggerChatTransport<typeof workSphereChat>({
+    task: "work-sphere-chat",
+    accessToken: ({ chatId }) => mintToken({ data: { chatId } }),
+    startSession: ({ chatId }) => startSession({ data: { chatId } }),
+  })
+
+  const { messages, isLoading } = useLoadTranscript(
+    chatId,
+    ({ chatId }) => loadTranscript({ data: { chatId } }),
+    { transport }
+  )
+
+  if (isLoading) return null
+
+  return (
+    <ChatView
+      chatId={chatId}
+      initialMessages={messages}
+      transport={transport}
+    />
+  )
+}
+
+function ChatView({
+  chatId,
+  initialMessages,
+  transport,
+}: {
+  chatId: string
+  initialMessages: UIMessage[]
+  transport: ReturnType<typeof useTriggerChatTransport<typeof workSphereChat>>
+}) {
+  const { messages, sendMessage, status, stop } = useChat({
+    id: chatId,
+    messages: initialMessages,
+    transport,
+  })
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
