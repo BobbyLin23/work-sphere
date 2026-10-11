@@ -13,6 +13,7 @@ import { Route as dashboardDashboardRouteImport } from './routes/(dashboard)/_da
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as SignUpSplatRouteImport } from './routes/sign-up.$'
 import { Route as dashboardDashboardIndexRouteImport } from './routes/(dashboard)/_dashboard/index'
+import { Route as dashboardDashboardChatsChatIdRouteImport } from './routes/(dashboard)/_dashboard/chats.$chatId'
 
 const dashboardDashboardRoute = dashboardDashboardRouteImport.update({
   id: '/(dashboard)/_dashboard',
@@ -33,16 +34,24 @@ const dashboardDashboardIndexRoute = dashboardDashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => dashboardDashboardRoute,
 } as any)
+const dashboardDashboardChatsChatIdRoute =
+  dashboardDashboardChatsChatIdRouteImport.update({
+    id: '/chats/$chatId',
+    path: '/chats/$chatId',
+    getParentRoute: () => dashboardDashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
   '/': typeof dashboardDashboardIndexRoute
+  '/chats/$chatId': typeof dashboardDashboardChatsChatIdRoute
 }
 export interface FileRoutesByTo {
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
   '/': typeof dashboardDashboardIndexRoute
+  '/chats/$chatId': typeof dashboardDashboardChatsChatIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -50,18 +59,20 @@ export interface FileRoutesById {
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
   '/(dashboard)/_dashboard/': typeof dashboardDashboardIndexRoute
+  '/(dashboard)/_dashboard/chats/$chatId': typeof dashboardDashboardChatsChatIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/sign-in/$' | '/sign-up/$' | '/'
+  fullPaths: '/sign-in/$' | '/sign-up/$' | '/' | '/chats/$chatId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/sign-in/$' | '/sign-up/$' | '/'
+  to: '/sign-in/$' | '/sign-up/$' | '/' | '/chats/$chatId'
   id:
     | '__root__'
     | '/(dashboard)/_dashboard'
     | '/sign-in/$'
     | '/sign-up/$'
     | '/(dashboard)/_dashboard/'
+    | '/(dashboard)/_dashboard/chats/$chatId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,15 +111,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof dashboardDashboardIndexRouteImport
       parentRoute: typeof dashboardDashboardRoute
     }
+    '/(dashboard)/_dashboard/chats/$chatId': {
+      id: '/(dashboard)/_dashboard/chats/$chatId'
+      path: '/chats/$chatId'
+      fullPath: '/chats/$chatId'
+      preLoaderRoute: typeof dashboardDashboardChatsChatIdRouteImport
+      parentRoute: typeof dashboardDashboardRoute
+    }
   }
 }
 
 interface dashboardDashboardRouteChildren {
   dashboardDashboardIndexRoute: typeof dashboardDashboardIndexRoute
+  dashboardDashboardChatsChatIdRoute: typeof dashboardDashboardChatsChatIdRoute
 }
 
 const dashboardDashboardRouteChildren: dashboardDashboardRouteChildren = {
   dashboardDashboardIndexRoute: dashboardDashboardIndexRoute,
+  dashboardDashboardChatsChatIdRoute: dashboardDashboardChatsChatIdRoute,
 }
 
 const dashboardDashboardRouteWithChildren =

@@ -94,4 +94,6 @@ export const createBotSchema = createInsertSchema(bots, {
   avatar: (schema) => schema.min(1),
 }).pick({ name: true, job: true, instructions: true, avatar: true })
 
+export const updateBotSchema = createBotSchema.extend({ id: z.string() })
+
 export type CreateBotInput = z.infer<typeof createBotSchema>

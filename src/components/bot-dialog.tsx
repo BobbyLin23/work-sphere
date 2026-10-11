@@ -1,10 +1,21 @@
 import { useForm } from "@tanstack/react-form"
-import { useRouter } from "@tanstack/react-router"
+import { useNavigate, useRouter } from "@tanstack/react-router"
 import { useServerFn } from "@tanstack/react-start"
 import { nanoid } from "nanoid"
 import { type ReactElement, useState } from "react"
-import { ShuffleIcon } from "lucide-react"
+import { ShuffleIcon, Trash2Icon } from "lucide-react"
 import { ChatAvatar } from "@/components/chat-avatar"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -25,7 +36,7 @@ import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { createBotSchema } from "@/db/schema"
-import { createBot } from "@/lib/bots"
+import { createBot, deleteBot, updateBot } from "@/lib/bots"
 
 const JOB_PRESETS = [
   {
@@ -50,18 +61,78 @@ const JOB_PRESETS = [
   },
 ]
 
-const emptyValues = () => ({
-  name: "",
-  job: "",
-  instructions: "",
-  avatar: nanoid(),
+type EditableBot = {
+  id: string
+  name: string
+  job: string
+  instructions: string | null
+  avatar: string
+}
+
+const initialValues = (bot?: EditableBot) => ({
+  name: bot?.name ?? "",
+  job: bot?.job ?? "",
+  instructions: bot?.instructions ?? "",
+  avatar: bot?.avatar ?? nanoid(),
 })
 
+function DeleteBotButton({ botId }: { botId: string }) {
+  const router = useRouter()
+  const navigate = useNavigate()
+  const deleteBotFn = useServerFn(deleteBot)
+  const [open, setOpen] = useState(false)
+  const [pending, setPending] = useState(false)
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger
+        render={
+          <Button type="button" variant="destructive" className="sm:mr-auto" />
+        }
+      >
+        <Trash2Icon data-icon="inline-start" />
+        Delete
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete this bot?</AlertDialogTitle>
+          <AlertDialogDescription>
+            The bot and its chats will be permanently removed. This can't be
+            undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            disabled={pending}
+            onClick={async () => {
+              setPending(true)
+              try {
+                await deleteBotFn({ data: { id: botId } })
+                await navigate({ to: "/" })
+                await router.invalidate()
+              } finally {
+                setPending(false)
+              }
+            }}
+          >
+            {pending && <Spinner data-icon="inline-start" />}
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
 function BotDialog({
+  bot,
   trigger,
   open: openProp,
   onOpenChange,
 }: {
+  bot?: EditableBot
   trigger?: ReactElement
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -74,14 +145,20 @@ function BotDialog({
   }
   const router = useRouter()
   const createBotFn = useServerFn(createBot)
+  const updateBotFn = useServerFn(updateBot)
 
   const form = useForm({
-    defaultValues: emptyValues(),
+    defaultValues: initialValues(bot),
     validators: { onSubmit: createBotSchema },
     onSubmit: async ({ value }) => {
-      await createBotFn({ data: value })
+      if (bot) {
+        await updateBotFn({ data: { ...value, id: bot.id } })
+      } else {
+        await createBotFn({ data: value })
+      }
       await router.invalidate()
       setOpen(false)
+      form.reset(bot ? value : initialValues())
     },
   })
 
@@ -91,16 +168,18 @@ function BotDialog({
       onOpenChange={(next) => {
         setOpen(next)
         if (!next) {
-          form.reset(emptyValues())
+          form.reset(initialValues(bot))
         }
       }}
     >
       {trigger && <DialogTrigger render={trigger} />}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New bot</DialogTitle>
+          <DialogTitle>{bot ? "Edit bot" : "New bot"}</DialogTitle>
           <DialogDescription>
-            Give it a face, a name, and a job to do.
+            {bot
+              ? "Change its face, name, or job."
+              : "Give it a face, a name, and a job to do."}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -222,6 +301,7 @@ function BotDialog({
           </FieldGroup>
         </form>
         <DialogFooter>
+          {bot && <DeleteBotButton botId={bot.id} />}
           <Button
             type="button"
             variant="outline"
@@ -233,7 +313,7 @@ function BotDialog({
             {(isSubmitting) => (
               <Button type="submit" form="bot-form" disabled={isSubmitting}>
                 {isSubmitting && <Spinner data-icon="inline-start" />}
-                Create bot
+                {bot ? "Save changes" : "Create bot"}
               </Button>
             )}
           </form.Subscribe>
@@ -244,3 +324,4 @@ function BotDialog({
 }
 
 export { BotDialog }
+export type { EditableBot }
