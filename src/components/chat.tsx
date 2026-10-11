@@ -4,8 +4,10 @@ import {
   useTriggerChatTransport,
 } from "@trigger.dev/sdk/chat/react"
 import { useServerFn } from "@tanstack/react-start"
+import { isToolUIPart } from "ai"
 import type { UIMessage } from "ai"
 import type { workSphereChat } from "@/trigger/chat"
+import { ToolCall } from "@/components/chat-tool-call"
 import {
   Conversation,
   ConversationContent,
@@ -86,11 +88,18 @@ function ChatView({
           {messages.map((message) => (
             <Message key={message.id} from={message.role}>
               <MessageContent>
-                <MessageResponse>
-                  {message.parts
-                    .map((part) => (part.type === "text" ? part.text : ""))
-                    .join("")}
-                </MessageResponse>
+                {message.parts.map((part, index) => {
+                  const key = `${message.id}-${index}`
+                  if (part.type === "text") {
+                    return part.text ? (
+                      <MessageResponse key={key}>{part.text}</MessageResponse>
+                    ) : null
+                  }
+                  if (isToolUIPart(part)) {
+                    return <ToolCall key={part.toolCallId} part={part} />
+                  }
+                  return null
+                })}
               </MessageContent>
             </Message>
           ))}

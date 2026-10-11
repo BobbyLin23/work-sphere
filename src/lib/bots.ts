@@ -10,6 +10,7 @@ import {
   createBotSchema,
   updateBotSchema,
 } from "@/db/schema"
+import { createSandbox, deleteSandbox } from "@/lib/daytona.server"
 
 export const deleteBot = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.string() }))
@@ -19,7 +20,7 @@ export const deleteBot = createServerFn({ method: "POST" })
       throw new Error("Unauthorized")
     }
 
-    await db.transaction(async (tx) => {
+    const sandboxId = await db.transaction(async (tx) => {
       const memberships = await tx
         .select({ chatId: chatMembers.chatId })
         .from(chatMembers)
@@ -28,7 +29,7 @@ export const deleteBot = createServerFn({ method: "POST" })
       const deleted = await tx
         .delete(bots)
         .where(and(eq(bots.id, data.id), eq(bots.userId, userId)))
-        .returning({ id: bots.id })
+        .returning({ sandboxId: bots.sandboxId })
       if (deleted.length === 0) {
         throw new Error("Bot not found")
       }
@@ -38,7 +39,12 @@ export const deleteBot = createServerFn({ method: "POST" })
           .delete(chats)
           .where(and(inArray(chats.id, chatIds), eq(chats.userId, userId)))
       }
+      return deleted[0].sandboxId
     })
+
+    if (sandboxId) {
+      await deleteSandbox(sandboxId)
+    }
   })
 
 export const updateBot = createServerFn({ method: "POST" })
@@ -68,16 +74,27 @@ export const createBot = createServerFn({ method: "POST" })
       throw new Error("Unauthorized")
     }
 
-    return db.transaction(async (tx) => {
-      const [bot] = await tx
-        .insert(bots)
-        .values({ ...data, instructions: data.instructions || null, userId })
-        .returning()
-      const [chat] = await tx
-        .insert(chats)
-        .values({ userId, kind: "direct" })
-        .returning()
-      await tx.insert(chatMembers).values({ chatId: chat.id, botId: bot.id })
-      return bot
-    })
+    const sandboxId = await createSandbox()
+    try {
+      return await db.transaction(async (tx) => {
+        const [bot] = await tx
+          .insert(bots)
+          .values({
+            ...data,
+            instructions: data.instructions || null,
+            userId,
+            sandboxId,
+          })
+          .returning()
+        const [chat] = await tx
+          .insert(chats)
+          .values({ userId, kind: "direct" })
+          .returning()
+        await tx.insert(chatMembers).values({ chatId: chat.id, botId: bot.id })
+        return bot
+      })
+    } catch (error) {
+      await deleteSandbox(sandboxId).catch(() => {})
+      throw error
+    }
   })
