@@ -19,21 +19,26 @@ export const getChat = createServerFn({ method: "GET" })
       with: {
         members: {
           orderBy: (members) => asc(members.joinedAt),
-          limit: 1,
           with: { bot: true },
         },
       },
     })
 
-    const bot = chat?.members[0]?.bot
+    const members = chat?.members.map((member) => member.bot) ?? []
+    const bot = members[0]
     if (!chat || !bot) {
       throw notFound()
     }
 
     return {
       id: chat.id,
+      isGroup: chat.kind === "group",
       name: chat.name ?? bot.name,
-      avatar: bot.avatar,
+      members: members.map((member) => ({
+        id: member.id,
+        name: member.name,
+        avatar: member.avatar,
+      })),
       bot: {
         id: bot.id,
         name: bot.name,

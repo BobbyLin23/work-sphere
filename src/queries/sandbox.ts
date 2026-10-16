@@ -25,6 +25,10 @@ export const getSandboxVncUrl = createServerFn({ method: "POST" })
       },
     })
 
+    if (chat?.kind === "group") {
+      throw new Error("Group chats have no desktop")
+    }
+
     const sandboxId = chat?.members[0]?.bot.sandboxId
     if (!sandboxId) {
       throw new Error("This bot has no sandbox")

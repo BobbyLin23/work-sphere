@@ -17,22 +17,27 @@ export const getChatList = createServerFn({ method: "GET" }).handler(
       with: {
         members: {
           orderBy: (members) => asc(members.joinedAt),
-          limit: 1,
           with: { bot: true },
         },
       },
     })
 
     return rows.flatMap((chat) => {
-      const bot = chat.members[0]?.bot
+      const bots = chat.members.map((member) => member.bot)
+      const bot = bots[0]
       if (!bot) {
         return []
       }
+      const isGroup = chat.kind === "group"
       return {
         id: chat.id,
-        name: chat.name ?? bot.name,
-        avatar: bot.avatar,
-        lastMessagePreview: chat.lastMessagePreview ?? bot.job,
+        botId: bot.id,
+        isGroup,
+        name: chat.name ?? bots.map((member) => member.name).join(", "),
+        avatars: bots.map((member) => member.avatar),
+        lastMessagePreview:
+          chat.lastMessagePreview ??
+          (isGroup ? `${bots.length} bots` : bot.job),
         lastMessageAt: chat.lastMessageAt,
       }
     })

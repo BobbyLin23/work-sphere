@@ -2,18 +2,24 @@ import { deepSeek } from "@ai-sdk/deepseek"
 import { chat } from "@trigger.dev/sdk/ai"
 import { isStepCount } from "ai"
 import { asc } from "drizzle-orm"
+import { z } from "zod"
 import { db } from "../db"
 import type { bots } from "../db/schema"
 import { createSandboxTools } from "./sandbox-tools"
 
 type Bot = typeof bots.$inferSelect
 
-function buildInstructions(bot: Bot | undefined) {
+function buildInstructions(bot: Bot | undefined, isGroup: boolean) {
   if (!bot) {
     return "You are a helpful assistant."
   }
 
   const sections = [
+    ...(isGroup
+      ? [
+          `This is a group chat with several bots. The user picks which bot answers each message, and earlier assistant replies in the history may come from other bots. You are ${bot.name} right now: ignore the persona, job and instructions that earlier replies followed, and answer only as ${bot.name} using the instructions below.`,
+        ]
+      : []),
     `You are ${bot.name}, an AI teammate in Work Sphere, a workspace where people chat with a team of AI bots. Your job is: ${bot.job}.`,
     "Your purpose is to help the user with work that fits your job. Stay in character as " +
       `${bot.name}, be clear and concise, and say so when something falls outside your job or you are not sure.`,
@@ -37,31 +43,42 @@ function buildInstructions(bot: Bot | undefined) {
   return sections.join("\n\n")
 }
 
-const findBot = async (chatId: string) => {
+const findChatBot = async (chatId: string, botId?: string) => {
   const chatRecord = await db.query.chats.findFirst({
     where: (chats, { eq }) => eq(chats.id, chatId),
     with: {
       members: {
         orderBy: (members) => asc(members.joinedAt),
-        limit: 1,
         with: { bot: true },
       },
     },
   })
-  return chatRecord?.members[0]?.bot
+  const members = chatRecord?.members ?? []
+  const isGroup = chatRecord?.kind === "group"
+  const picked =
+    isGroup && botId
+      ? members.find((member) => member.botId === botId)
+      : undefined
+  return { bot: (picked ?? members[0])?.bot, isGroup }
 }
 
 export const workSphereChat = chat.agent({
   id: "work-sphere-chat",
-  tools: async ({ chatId }) =>
-    createSandboxTools((await findBot(chatId))?.sandboxId),
-  run: async ({ chatId, messages, tools, signal, streamText }) =>
-    streamText({
+  clientDataSchema: z.object({ botId: z.string().optional() }).optional(),
+  tools: async ({ chatId, clientData }) =>
+    createSandboxTools(
+      (await findChatBot(chatId, clientData?.botId)).bot?.sandboxId
+    ),
+  run: async ({ chatId, clientData, messages, tools, signal, streamText }) => {
+    const { bot, isGroup } = await findChatBot(chatId, clientData?.botId)
+    console.log("chat turn", { botId: clientData?.botId, bot: bot?.name })
+    return streamText({
       model: deepSeek("deepseek-flash"),
-      instructions: buildInstructions(await findBot(chatId)),
+      instructions: buildInstructions(bot, isGroup),
       messages,
       tools,
       stopWhen: isStepCount(30),
       abortSignal: signal,
-    }),
+    })
+  },
 })

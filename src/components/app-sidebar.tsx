@@ -11,6 +11,8 @@ import {
 import { useEffect, useState } from "react"
 import { BotDialog } from "@/components/bot-dialog"
 import { ChatAvatar } from "@/components/chat-avatar"
+import { GroupChatAvatar } from "@/components/group-chat-avatar"
+import { GroupChatDialog } from "@/components/group-chat-dialog"
 import { useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
 import {
@@ -65,7 +67,11 @@ type ChatSummary = ReturnType<typeof dashboardRoute.useLoaderData>[number]
 function ChatSummaryContent({ chat }: { chat: ChatSummary }) {
   return (
     <>
-      <ChatAvatar seed={chat.avatar} />
+      {chat.isGroup ? (
+        <GroupChatAvatar seeds={chat.avatars} />
+      ) : (
+        <ChatAvatar seed={chat.avatars[0]} />
+      )}
       <div className="flex min-w-0 flex-1 flex-col group-data-[collapsible=icon]:hidden">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate font-medium">{chat.name}</span>
@@ -84,6 +90,7 @@ function ChatSummaryContent({ chat }: { chat: ChatSummary }) {
 export function AppSidebar() {
   const chatList = dashboardRoute.useLoaderData()
   const [botDialogOpen, setBotDialogOpen] = useState(false)
+  const [groupDialogOpen, setGroupDialogOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const navigate = useNavigate()
   const activeChatId = useMatch({
@@ -125,7 +132,7 @@ export function AppSidebar() {
                 <PlusIcon />
                 Create new bot
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setGroupDialogOpen(true)}>
                 <UsersIcon />
                 Create group chat
               </DropdownMenuItem>
@@ -146,6 +153,17 @@ export function AppSidebar() {
           </KbdGroup>
         </Button>
         <BotDialog open={botDialogOpen} onOpenChange={setBotDialogOpen} />
+        <GroupChatDialog
+          bots={chatList
+            .filter((chat) => !chat.isGroup)
+            .map((chat) => ({
+              id: chat.botId,
+              name: chat.name,
+              avatar: chat.avatars[0],
+            }))}
+          open={groupDialogOpen}
+          onOpenChange={setGroupDialogOpen}
+        />
         <CommandDialog
           open={searchOpen}
           onOpenChange={setSearchOpen}

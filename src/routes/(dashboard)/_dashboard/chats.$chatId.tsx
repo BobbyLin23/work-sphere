@@ -21,12 +21,14 @@ export const Route = createFileRoute("/(dashboard)/_dashboard/chats/$chatId")({
 function ChatPage() {
   const chat = Route.useLoaderData()
   const [panelOpen, setPanelOpen] = useState(false)
+  const bot = chat.isGroup ? undefined : chat.bot
+  const showPanel = panelOpen && !!bot
 
   return (
     <SandboxScreenProvider
       chatId={chat.id}
       title={`${chat.bot.name}'s screen`}
-      enabled={panelOpen}
+      enabled={showPanel}
     >
       <ResizablePanelGroup
         orientation="horizontal"
@@ -38,16 +40,29 @@ function ChatPage() {
           style={{ overflow: "hidden" }}
         >
           <div className="flex min-h-0 flex-1 flex-col">
-            <ChatHeader
-              name={chat.name}
-              bot={chat.bot}
-              panelOpen={panelOpen}
-              onTogglePanel={() => setPanelOpen((open) => !open)}
+            {bot ? (
+              <ChatHeader
+                name={chat.name}
+                bot={bot}
+                panelOpen={panelOpen}
+                onTogglePanel={() => setPanelOpen((open) => !open)}
+              />
+            ) : (
+              <ChatHeader
+                name={chat.name}
+                groupAvatars={chat.members.map((member) => member.avatar)}
+                panelOpen={false}
+                onTogglePanel={() => {}}
+              />
+            )}
+            <Chat
+              key={chat.id}
+              chatId={chat.id}
+              members={chat.isGroup ? chat.members : undefined}
             />
-            <Chat key={chat.id} chatId={chat.id} />
           </div>
         </ResizablePanel>
-        {panelOpen && (
+        {showPanel && (
           <>
             <ResizableHandle />
             <ResizablePanel

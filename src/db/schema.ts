@@ -94,6 +94,14 @@ export const createBotSchema = createInsertSchema(bots, {
   avatar: (schema) => schema.min(1),
 }).pick({ name: true, job: true, instructions: true, avatar: true })
 
+export const createGroupChatSchema = createInsertSchema(chats, {
+  name: z.string().trim().min(1, "Name is required").max(50),
+})
+  .pick({ name: true })
+  .extend({
+    botIds: z.array(z.string()).min(2, "Pick at least two bots"),
+  })
+
 export const updateBotSchema = createBotSchema.extend({ id: z.string() })
 
 export type CreateBotInput = z.infer<typeof createBotSchema>

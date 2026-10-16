@@ -3,10 +3,12 @@ import {
   useLoadTranscript,
   useTriggerChatTransport,
 } from "@trigger.dev/sdk/chat/react"
+import { useState } from "react"
 import { useServerFn } from "@tanstack/react-start"
 import { isToolUIPart } from "ai"
 import type { UIMessage } from "ai"
 import type { workSphereChat } from "@/trigger/chat"
+import { ChatAvatar } from "@/components/chat-avatar"
 import { ToolCall } from "@/components/chat-tool-call"
 import {
   Conversation,
@@ -23,8 +25,14 @@ import {
   PromptInput,
   PromptInputBody,
   PromptInputFooter,
+  PromptInputSelect,
+  PromptInputSelectContent,
+  PromptInputSelectItem,
+  PromptInputSelectTrigger,
+  PromptInputSelectValue,
   PromptInputSubmit,
   PromptInputTextarea,
+  PromptInputTools,
 } from "@/components/ai-elements/prompt-input"
 import {
   loadChatTranscript,
@@ -32,7 +40,13 @@ import {
   startChatSession,
 } from "@/queries/chat-agent"
 
-function Chat({ chatId }: { chatId: string }) {
+type ChatMember = {
+  id: string
+  name: string
+  avatar: string
+}
+
+function Chat({ chatId, members }: { chatId: string; members?: ChatMember[] }) {
   const mintToken = useServerFn(mintChatAccessToken)
   const startSession = useServerFn(startChatSession)
   const loadTranscript = useServerFn(loadChatTranscript)
@@ -55,6 +69,7 @@ function Chat({ chatId }: { chatId: string }) {
     <ChatView
       chatId={chatId}
       initialMessages={messages}
+      members={members}
       transport={transport}
     />
   )
@@ -63,10 +78,12 @@ function Chat({ chatId }: { chatId: string }) {
 function ChatView({
   chatId,
   initialMessages,
+  members,
   transport,
 }: {
   chatId: string
   initialMessages: UIMessage[]
+  members?: ChatMember[]
   transport: ReturnType<typeof useTriggerChatTransport<typeof workSphereChat>>
 }) {
   const { messages, sendMessage, status, stop } = useChat({
@@ -74,6 +91,7 @@ function ChatView({
     messages: initialMessages,
     transport,
   })
+  const [botId, setBotId] = useState(members?.[0]?.id)
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -109,13 +127,49 @@ function ChatView({
       <div className="p-4">
         <PromptInput
           onSubmit={({ text }) => {
-            if (text.trim()) sendMessage({ text })
+            if (!text.trim()) return
+            sendMessage({ text }, { metadata: { botId } })
           }}
         >
           <PromptInputBody>
             <PromptInputTextarea placeholder="Say something..." />
           </PromptInputBody>
-          <PromptInputFooter className="justify-end">
+          <PromptInputFooter>
+            <PromptInputTools>
+              {members && botId && (
+                <PromptInputSelect
+                  value={botId}
+                  onValueChange={(value) => {
+                    if (typeof value === "string") setBotId(value)
+                  }}
+                >
+                  <PromptInputSelectTrigger>
+                    <PromptInputSelectValue>
+                      {(value: string) => {
+                        const member = members.find((m) => m.id === value)
+                        return member ? (
+                          <span className="flex items-center gap-2">
+                            <ChatAvatar
+                              seed={member.avatar}
+                              className="size-4"
+                            />
+                            {member.name}
+                          </span>
+                        ) : null
+                      }}
+                    </PromptInputSelectValue>
+                  </PromptInputSelectTrigger>
+                  <PromptInputSelectContent>
+                    {members.map((member) => (
+                      <PromptInputSelectItem key={member.id} value={member.id}>
+                        <ChatAvatar seed={member.avatar} className="size-4" />
+                        {member.name}
+                      </PromptInputSelectItem>
+                    ))}
+                  </PromptInputSelectContent>
+                </PromptInputSelect>
+              )}
+            </PromptInputTools>
             <PromptInputSubmit status={status} onStop={stop} />
           </PromptInputFooter>
         </PromptInput>
