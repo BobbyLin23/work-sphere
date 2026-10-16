@@ -8,6 +8,7 @@ import { useServerFn } from "@tanstack/react-start"
 import { getToolName, isToolUIPart } from "ai"
 import type { UIMessage } from "ai"
 import type { workSphereChat } from "@/trigger/chat"
+import { Badge } from "@/components/ui/badge"
 import { ChatAvatar } from "@/components/chat-avatar"
 import { ToolCall } from "@/components/chat-tool-call"
 import {
@@ -183,6 +184,10 @@ function ChatView({
               members && message.role === "assistant"
                 ? members.find((m) => m.id === authorId)
                 : undefined
+            const recipient =
+              members && message.role === "user"
+                ? members.find((m) => m.id === getBotId(message))
+                : undefined
             return (
               <Message
                 key={message.id}
@@ -196,7 +201,24 @@ function ChatView({
                   />
                 )}
                 <MessageContent>
-                  {message.parts.map((part, index) => {
+                  {recipient && (
+                    <p className="whitespace-pre-wrap break-words">
+                      <Badge
+                        variant="outline"
+                        className="mr-1.5 h-6 max-w-40 gap-1.5 pl-1 align-middle"
+                      >
+                        <ChatAvatar
+                          seed={recipient.avatar}
+                          className="size-4 shrink-0"
+                        />
+                        <span className="truncate">{recipient.name}</span>
+                      </Badge>
+                      {message.parts.map((part) =>
+                        part.type === "text" ? part.text : null
+                      )}
+                    </p>
+                  )}
+                  {(!recipient ? message.parts : []).map((part, index) => {
                     const key = `${message.id}-${index}`
                     if (part.type === "text") {
                       return part.text ? (
