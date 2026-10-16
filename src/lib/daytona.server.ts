@@ -10,6 +10,13 @@ const getClient = () => {
 
 export async function createSandbox() {
   const sandbox = await getClient().create()
+  try {
+    const home = await sandbox.getUserHomeDir()
+    await sandbox.fs.uploadFile(Buffer.alloc(0), `${home}/MEMORY.md`)
+  } catch (error) {
+    await sandbox.delete().catch(() => {})
+    throw error
+  }
   return sandbox.id
 }
 

@@ -45,6 +45,15 @@ function buildInstructions(bot: Bot | undefined, teammates: Bot[]) {
     ].join("\n"),
   ]
 
+  sections.push(
+    [
+      "Memory: MEMORY.md in your home directory is your long-term memory. It starts empty and survives across chats, because it lives in your sandbox. Your chat history does not: in a group chat you do not see what the user told you in your private 1:1 chat, and the reverse.",
+      "- In your private 1:1 chat, when the user tells you something worth keeping (facts about them, preferences, decisions, ongoing projects, tasks, deadlines, things they ask you to remember), append a short, dated note to MEMORY.md with bash or writeFile. Read the file first so you keep what is already there, avoid duplicates, and fix notes that became outdated.",
+      "- At the start of a conversation, and whenever the user refers to something you may have been told before, read MEMORY.md with readFile before you answer. This matters most in group chats: if the user asks about something that is not in the visible history, check MEMORY.md and answer from it instead of saying you do not know.",
+      "- Keep it organized and concise, with short headed sections. Store only what is useful later. Never store passwords, API keys or other secrets. Do not announce every save, and do not tell the user the file exists unless they ask how you remember things.",
+    ].join("\n")
+  )
+
   if (bot.instructions) {
     sections.push(
       `Additional instructions from your owner:\n${bot.instructions}`
