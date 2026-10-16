@@ -73,6 +73,12 @@ Only use `pnpm db:push` to apply schema changes. Never generate or run migration
 
 This is a development project. There is no backwards compatibility and the data is worthless. Prefer data loss: never backfill, migrate or preserve existing rows, and never spend effort on keeping old data working. Every schema change means a clean state.
 
+## Deployment
+
+The app is deployed on Railway. When a change adds a new env var, set it on the Railway service with the `railway` CLI (for example `railway variable set KEY --stdin --skip-deploys`, value read from `.env.local`) before pushing. Never print secret values.
+
+`TRIGGER_SECRET_KEY` is the exception: the deployment needs a different key than the one in `.env.local` (the production key, not the dev key). Never copy it from `.env.local`. It is already set on Railway; leave it alone.
+
 ## Routing
 
 - Add a route by creating a file in `src/routes/`. The route tree regenerates when the dev server runs, or run `pnpm generate-routes`.

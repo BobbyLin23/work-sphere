@@ -19,3 +19,16 @@ export async function getStartedSandbox(sandboxId: string) {
   }
   return sandbox
 }
+
+const NOVNC_PORT = 6080
+const VNC_URL_TTL_SECONDS = 3600
+
+export async function getVncUrl(sandboxId: string) {
+  const sandbox = await getStartedSandbox(sandboxId)
+  await sandbox.computerUse.start()
+  const { url } = await sandbox.getSignedPreviewUrl(
+    NOVNC_PORT,
+    VNC_URL_TTL_SECONDS
+  )
+  return `${url}/vnc.html?autoconnect=true&resize=scale&reconnect=true`
+}

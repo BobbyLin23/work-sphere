@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button"
 type ChatHeaderProps = {
   name: string
   bot: EditableBot
+  panelOpen: boolean
+  onTogglePanel: () => void
 }
 
-function ChatHeader({ name, bot }: ChatHeaderProps) {
+function ChatHeader({ name, bot, panelOpen, onTogglePanel }: ChatHeaderProps) {
   return (
     <header className="flex h-10 items-center justify-between border-b bg-background px-3">
       <BotDialog
@@ -20,7 +22,13 @@ function ChatHeader({ name, bot }: ChatHeaderProps) {
           </Button>
         }
       />
-      <Button variant="ghost" size="icon-sm" aria-label="Desktop">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Desktop"
+        aria-pressed={panelOpen}
+        onClick={onTogglePanel}
+      >
         <MonitorIcon />
       </Button>
     </header>
