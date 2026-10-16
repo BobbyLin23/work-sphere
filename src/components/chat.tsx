@@ -3,9 +3,9 @@ import {
   useLoadTranscript,
   useTriggerChatTransport,
 } from "@trigger.dev/sdk/chat/react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useServerFn } from "@tanstack/react-start"
-import { isToolUIPart } from "ai"
+import { getToolName, isToolUIPart } from "ai"
 import type { UIMessage } from "ai"
 import type { workSphereChat } from "@/trigger/chat"
 import { ChatAvatar } from "@/components/chat-avatar"
@@ -34,6 +34,7 @@ import {
   PromptInputTextarea,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input"
+import { cn } from "@/lib/utils"
 import {
   loadChatTranscript,
   mintChatAccessToken,
@@ -44,6 +45,43 @@ type ChatMember = {
   id: string
   name: string
   avatar: string
+}
+
+function getBotId(message: UIMessage | undefined) {
+  const metadata = message?.metadata
+  if (metadata && typeof metadata === "object" && "botId" in metadata) {
+    return typeof metadata.botId === "string" ? metadata.botId : undefined
+  }
+  return undefined
+}
+
+const MAX_HANDOFFS = 3
+
+function isHandoffMessage(message: UIMessage) {
+  const metadata = message.metadata
+  return (
+    typeof metadata === "object" &&
+    metadata !== null &&
+    "handoff" in metadata &&
+    metadata.handoff === true
+  )
+}
+
+function getHandoffTarget(message: UIMessage) {
+  for (const part of message.parts) {
+    if (
+      isToolUIPart(part) &&
+      getToolName(part) === "handoff" &&
+      part.state === "output-available" &&
+      typeof part.output === "object" &&
+      part.output !== null &&
+      "botId" in part.output &&
+      typeof part.output.botId === "string"
+    ) {
+      return part.output.botId
+    }
+  }
+  return undefined
 }
 
 function Chat({ chatId, members }: { chatId: string; members?: ChatMember[] }) {
@@ -92,6 +130,37 @@ function ChatView({
     transport,
   })
   const [botId, setBotId] = useState(members?.[0]?.id)
+  const handledMessageId = useRef<string>(undefined)
+  const handoffCount = useRef(0)
+
+  useEffect(() => {
+    const last = messages.at(-1)
+    if (
+      status !== "ready" ||
+      !members ||
+      last?.role !== "assistant" ||
+      handledMessageId.current === last.id
+    ) {
+      return
+    }
+    const targetId = getHandoffTarget(last)
+    const target = members.find((m) => m.id === targetId)
+    if (!target) return
+
+    handledMessageId.current = last.id
+    if (handoffCount.current >= MAX_HANDOFFS) return
+    handoffCount.current += 1
+
+    const from = members.find((m) => m.id === getBotId(last))
+    setBotId(target.id)
+    sendMessage(
+      {
+        text: `${from ? `${from.name} handed` : "The previous bot handed"} the user's latest request over to you, ${target.name}. Answer it now.`,
+        metadata: { botId: target.id, handoff: true },
+      },
+      { metadata: { botId: target.id } }
+    )
+  }, [messages, status, members, sendMessage])
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -103,24 +172,46 @@ function ChatView({
               description="Send a message to begin chatting."
             />
           )}
-          {messages.map((message) => (
-            <Message key={message.id} from={message.role}>
-              <MessageContent>
-                {message.parts.map((part, index) => {
-                  const key = `${message.id}-${index}`
-                  if (part.type === "text") {
-                    return part.text ? (
-                      <MessageResponse key={key}>{part.text}</MessageResponse>
-                    ) : null
-                  }
-                  if (isToolUIPart(part)) {
-                    return <ToolCall key={part.toolCallId} part={part} />
-                  }
-                  return null
-                })}
-              </MessageContent>
-            </Message>
-          ))}
+          {messages.map((message, index) => {
+            if (isHandoffMessage(message)) return null
+            const authorId =
+              getBotId(message) ??
+              (message.role === "assistant"
+                ? getBotId(messages[index - 1])
+                : undefined)
+            const author =
+              members && message.role === "assistant"
+                ? members.find((m) => m.id === authorId)
+                : undefined
+            return (
+              <Message
+                key={message.id}
+                from={message.role}
+                className={cn(author && "flex-row items-start")}
+              >
+                {author && (
+                  <ChatAvatar
+                    seed={author.avatar}
+                    className="size-8 shrink-0"
+                  />
+                )}
+                <MessageContent>
+                  {message.parts.map((part, index) => {
+                    const key = `${message.id}-${index}`
+                    if (part.type === "text") {
+                      return part.text ? (
+                        <MessageResponse key={key}>{part.text}</MessageResponse>
+                      ) : null
+                    }
+                    if (isToolUIPart(part)) {
+                      return <ToolCall key={part.toolCallId} part={part} />
+                    }
+                    return null
+                  })}
+                </MessageContent>
+              </Message>
+            )
+          })}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
@@ -128,7 +219,8 @@ function ChatView({
         <PromptInput
           onSubmit={({ text }) => {
             if (!text.trim()) return
-            sendMessage({ text }, { metadata: { botId } })
+            handoffCount.current = 0
+            sendMessage({ text, metadata: { botId } }, { metadata: { botId } })
           }}
         >
           <PromptInputBody>

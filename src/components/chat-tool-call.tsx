@@ -35,6 +35,7 @@ const TOOL_TITLES: Record<string, string> = {
   keyboardPress: "Press key",
   viewScreen: "View screen",
   showScreen: "Screen",
+  handoff: "Hand off",
 }
 
 const TOOL_ICONS: Record<string, ReactNode> = {
