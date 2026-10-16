@@ -1,19 +1,25 @@
 import { Daytona } from "@daytona/sdk"
 
-const daytona = new Daytona({ apiUrl: process.env.DAYTONA_API_URL })
+// Created on first use: Trigger.dev imports task files at deploy time, when
+// DAYTONA_API_KEY is not set, and the constructor throws without it.
+let client: Daytona | undefined
+const getClient = () => {
+  client ??= new Daytona({ apiUrl: process.env.DAYTONA_API_URL })
+  return client
+}
 
 export async function createSandbox() {
-  const sandbox = await daytona.create()
+  const sandbox = await getClient().create()
   return sandbox.id
 }
 
 export async function deleteSandbox(sandboxId: string) {
-  const sandbox = await daytona.get(sandboxId)
+  const sandbox = await getClient().get(sandboxId)
   await sandbox.delete()
 }
 
 export async function getStartedSandbox(sandboxId: string) {
-  const sandbox = await daytona.get(sandboxId)
+  const sandbox = await getClient().get(sandboxId)
   if (sandbox.state !== "started") {
     await sandbox.start()
   }
