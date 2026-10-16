@@ -50,7 +50,12 @@ function ChatPage() {
             ) : (
               <ChatHeader
                 name={chat.name}
-                groupAvatars={chat.members.map((member) => member.avatar)}
+                group={{
+                  id: chat.id,
+                  name: chat.name,
+                  botIds: chat.members.map((member) => member.id),
+                  avatars: chat.members.map((member) => member.avatar),
+                }}
                 panelOpen={false}
                 onTogglePanel={() => {}}
               />

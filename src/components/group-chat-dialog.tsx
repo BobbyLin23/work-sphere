@@ -1,7 +1,20 @@
 import { useForm } from "@tanstack/react-form"
 import { useNavigate, useRouter } from "@tanstack/react-router"
 import { useServerFn } from "@tanstack/react-start"
+import { Trash2Icon } from "lucide-react"
+import { type ReactElement, useState } from "react"
 import { ChatAvatar } from "@/components/chat-avatar"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -11,6 +24,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Field,
@@ -21,7 +35,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { createGroupChatSchema } from "@/db/schema"
-import { createGroupChat } from "@/lib/chats"
+import { createGroupChat, deleteGroupChat, updateGroupChat } from "@/lib/chats"
 
 type GroupChatBot = {
   id: string
@@ -29,30 +43,107 @@ type GroupChatBot = {
   avatar: string
 }
 
-const initialValues = { name: "", botIds: [] as string[] }
+type EditableGroupChat = {
+  id: string
+  name: string
+  botIds: string[]
+}
+
+const initialValues = (chat?: EditableGroupChat) => ({
+  name: chat?.name ?? "",
+  botIds: chat?.botIds ?? ([] as string[]),
+})
+
+function DeleteGroupChatButton({ chatId }: { chatId: string }) {
+  const router = useRouter()
+  const navigate = useNavigate()
+  const deleteGroupChatFn = useServerFn(deleteGroupChat)
+  const [open, setOpen] = useState(false)
+  const [pending, setPending] = useState(false)
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger
+        render={
+          <Button type="button" variant="destructive" className="sm:mr-auto" />
+        }
+      >
+        <Trash2Icon data-icon="inline-start" />
+        Delete
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete this group chat?</AlertDialogTitle>
+          <AlertDialogDescription>
+            The group chat will be permanently removed. The bots in it are kept.
+            This can't be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            disabled={pending}
+            onClick={async () => {
+              setPending(true)
+              try {
+                await deleteGroupChatFn({ data: { id: chatId } })
+                await navigate({ to: "/" })
+                await router.invalidate()
+              } finally {
+                setPending(false)
+              }
+            }}
+          >
+            {pending && <Spinner data-icon="inline-start" />}
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
 
 function GroupChatDialog({
   bots,
-  open,
+  chat,
+  trigger,
+  open: openProp,
   onOpenChange,
 }: {
   bots: GroupChatBot[]
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  chat?: EditableGroupChat
+  trigger?: ReactElement
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = openProp ?? internalOpen
+  const setOpen = (next: boolean) => {
+    setInternalOpen(next)
+    onOpenChange?.(next)
+  }
   const router = useRouter()
   const navigate = useNavigate()
   const createGroupChatFn = useServerFn(createGroupChat)
+  const updateGroupChatFn = useServerFn(updateGroupChat)
 
   const form = useForm({
-    defaultValues: initialValues,
+    defaultValues: initialValues(chat),
     validators: { onSubmit: createGroupChatSchema },
     onSubmit: async ({ value }) => {
-      const chat = await createGroupChatFn({ data: value })
+      if (chat) {
+        await updateGroupChatFn({ data: { ...value, id: chat.id } })
+        await router.invalidate()
+        setOpen(false)
+        form.reset(value)
+        return
+      }
+      const created = await createGroupChatFn({ data: value })
       await router.invalidate()
-      onOpenChange(false)
-      form.reset(initialValues)
-      await navigate({ href: `/chats/${chat.id}` })
+      setOpen(false)
+      form.reset(initialValues())
+      await navigate({ href: `/chats/${created.id}` })
     },
   })
 
@@ -60,17 +151,22 @@ function GroupChatDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        onOpenChange(next)
+        setOpen(next)
         if (!next) {
-          form.reset(initialValues)
+          form.reset(initialValues(chat))
         }
       }}
     >
+      {trigger && <DialogTrigger render={trigger} />}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New group chat</DialogTitle>
+          <DialogTitle>
+            {chat ? "Edit group chat" : "New group chat"}
+          </DialogTitle>
           <DialogDescription>
-            Name the group and pick the bots to put in it.
+            {chat
+              ? "Rename the group or change who is in it."
+              : "Name the group and pick the bots to put in it."}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -156,10 +252,11 @@ function GroupChatDialog({
           </FieldGroup>
         </form>
         <DialogFooter>
+          {chat && <DeleteGroupChatButton chatId={chat.id} />}
           <Button
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => setOpen(false)}
           >
             Cancel
           </Button>
@@ -171,7 +268,7 @@ function GroupChatDialog({
                 disabled={isSubmitting}
               >
                 {isSubmitting && <Spinner data-icon="inline-start" />}
-                Create group chat
+                {chat ? "Save changes" : "Create group chat"}
               </Button>
             )}
           </form.Subscribe>
@@ -182,3 +279,4 @@ function GroupChatDialog({
 }
 
 export { GroupChatDialog }
+export type { EditableGroupChat }

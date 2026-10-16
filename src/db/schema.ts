@@ -102,6 +102,10 @@ export const createGroupChatSchema = createInsertSchema(chats, {
     botIds: z.array(z.string()).min(2, "Pick at least two bots"),
   })
 
+export const updateGroupChatSchema = createGroupChatSchema.extend({
+  id: z.string(),
+})
+
 export const updateBotSchema = createBotSchema.extend({ id: z.string() })
 
 export type CreateBotInput = z.infer<typeof createBotSchema>
