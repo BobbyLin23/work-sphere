@@ -2,6 +2,7 @@ import { nanoid } from "nanoid"
 import { relations } from "drizzle-orm"
 import {
   index,
+  integer,
   pgEnum,
   pgTable,
   primaryKey,
@@ -10,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core"
 import { createInsertSchema } from "drizzle-zod"
 import { z } from "zod"
+import { USAGE_KINDS } from "../lib/usage"
 
 export const bots = pgTable(
   "bots",
@@ -73,6 +75,38 @@ export const chatMembers = pgTable(
     index("chat_members_bot_id_idx").on(table.botId),
   ]
 )
+
+export const usageKind = pgEnum("usage_kind", USAGE_KINDS)
+
+// Append-only ledger. botId is not a foreign key so usage survives bot deletion.
+export const usageEvents = pgTable(
+  "usage_events",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => nanoid()),
+    userId: text("user_id").notNull(),
+    kind: usageKind("kind").notNull(),
+    amount: integer("amount").notNull(),
+    botId: text("bot_id"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("usage_events_user_kind_created_idx").on(
+      table.userId,
+      table.kind,
+      table.createdAt
+    ),
+  ]
+)
+
+// Copy of the user's Clerk subscription period. Trigger.dev tasks read it
+// because they cannot call Clerk.
+export const usagePeriods = pgTable("usage_periods", {
+  userId: text("user_id").primaryKey(),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+})
 
 export const botsRelations = relations(bots, ({ many }) => ({
   chatMembers: many(chatMembers),

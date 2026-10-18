@@ -9,12 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as dashboardDashboardRouteImport } from './routes/(dashboard)/_dashboard'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as SignUpSplatRouteImport } from './routes/sign-up.$'
 import { Route as dashboardDashboardIndexRouteImport } from './routes/(dashboard)/_dashboard/index'
+import { Route as dashboardDashboardUsageRouteImport } from './routes/(dashboard)/_dashboard/usage'
 import { Route as dashboardDashboardChatsChatIdRouteImport } from './routes/(dashboard)/_dashboard/chats.$chatId'
 
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const dashboardDashboardRoute = dashboardDashboardRouteImport.update({
   id: '/(dashboard)/_dashboard',
   getParentRoute: () => rootRouteImport,
@@ -34,6 +41,11 @@ const dashboardDashboardIndexRoute = dashboardDashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => dashboardDashboardRoute,
 } as any)
+const dashboardDashboardUsageRoute = dashboardDashboardUsageRouteImport.update({
+  id: '/usage',
+  path: '/usage',
+  getParentRoute: () => dashboardDashboardRoute,
+} as any)
 const dashboardDashboardChatsChatIdRoute =
   dashboardDashboardChatsChatIdRouteImport.update({
     id: '/chats/$chatId',
@@ -42,40 +54,51 @@ const dashboardDashboardChatsChatIdRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
+  '/pricing': typeof PricingRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
+  '/usage': typeof dashboardDashboardUsageRoute
   '/': typeof dashboardDashboardIndexRoute
   '/chats/$chatId': typeof dashboardDashboardChatsChatIdRoute
 }
 export interface FileRoutesByTo {
+  '/pricing': typeof PricingRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
+  '/usage': typeof dashboardDashboardUsageRoute
   '/': typeof dashboardDashboardIndexRoute
   '/chats/$chatId': typeof dashboardDashboardChatsChatIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/pricing': typeof PricingRoute
   '/(dashboard)/_dashboard': typeof dashboardDashboardRouteWithChildren
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
+  '/(dashboard)/_dashboard/usage': typeof dashboardDashboardUsageRoute
   '/(dashboard)/_dashboard/': typeof dashboardDashboardIndexRoute
   '/(dashboard)/_dashboard/chats/$chatId': typeof dashboardDashboardChatsChatIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/sign-in/$' | '/sign-up/$' | '/' | '/chats/$chatId'
+  fullPaths:
+    '/pricing' | '/sign-in/$' | '/sign-up/$' | '/usage' | '/' | '/chats/$chatId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/sign-in/$' | '/sign-up/$' | '/' | '/chats/$chatId'
+  to:
+    '/pricing' | '/sign-in/$' | '/sign-up/$' | '/usage' | '/' | '/chats/$chatId'
   id:
     | '__root__'
+    | '/pricing'
     | '/(dashboard)/_dashboard'
     | '/sign-in/$'
     | '/sign-up/$'
+    | '/(dashboard)/_dashboard/usage'
     | '/(dashboard)/_dashboard/'
     | '/(dashboard)/_dashboard/chats/$chatId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  PricingRoute: typeof PricingRoute
   dashboardDashboardRoute: typeof dashboardDashboardRouteWithChildren
   SignInSplatRoute: typeof SignInSplatRoute
   SignUpSplatRoute: typeof SignUpSplatRoute
@@ -83,6 +106,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/(dashboard)/_dashboard': {
       id: '/(dashboard)/_dashboard'
       path: ''
@@ -111,6 +141,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof dashboardDashboardIndexRouteImport
       parentRoute: typeof dashboardDashboardRoute
     }
+    '/(dashboard)/_dashboard/usage': {
+      id: '/(dashboard)/_dashboard/usage'
+      path: '/usage'
+      fullPath: '/usage'
+      preLoaderRoute: typeof dashboardDashboardUsageRouteImport
+      parentRoute: typeof dashboardDashboardRoute
+    }
     '/(dashboard)/_dashboard/chats/$chatId': {
       id: '/(dashboard)/_dashboard/chats/$chatId'
       path: '/chats/$chatId'
@@ -122,11 +159,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface dashboardDashboardRouteChildren {
+  dashboardDashboardUsageRoute: typeof dashboardDashboardUsageRoute
   dashboardDashboardIndexRoute: typeof dashboardDashboardIndexRoute
   dashboardDashboardChatsChatIdRoute: typeof dashboardDashboardChatsChatIdRoute
 }
 
 const dashboardDashboardRouteChildren: dashboardDashboardRouteChildren = {
+  dashboardDashboardUsageRoute: dashboardDashboardUsageRoute,
   dashboardDashboardIndexRoute: dashboardDashboardIndexRoute,
   dashboardDashboardChatsChatIdRoute: dashboardDashboardChatsChatIdRoute,
 }
@@ -135,6 +174,7 @@ const dashboardDashboardRouteWithChildren =
   dashboardDashboardRoute._addFileChildren(dashboardDashboardRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  PricingRoute: PricingRoute,
   dashboardDashboardRoute: dashboardDashboardRouteWithChildren,
   SignInSplatRoute: SignInSplatRoute,
   SignUpSplatRoute: SignUpSplatRoute,

@@ -35,6 +35,7 @@ import {
   PromptInputTextarea,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input"
+import { useBillingError } from "@/hooks/use-billing-error"
 import { cn } from "@/lib/utils"
 import {
   loadChatTranscript,
@@ -125,10 +126,12 @@ function ChatView({
   members?: ChatMember[]
   transport: ReturnType<typeof useTriggerChatTransport<typeof workSphereChat>>
 }) {
+  const handleBillingError = useBillingError()
   const { messages, sendMessage, status, stop } = useChat({
     id: chatId,
     messages: initialMessages,
     transport,
+    onError: handleBillingError,
   })
   const [botId, setBotId] = useState(members?.[0]?.id)
   const handledMessageId = useRef<string>(undefined)

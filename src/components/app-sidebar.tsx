@@ -2,6 +2,7 @@ import { UserButton } from "@clerk/tanstack-react-start"
 import { getRouteApi, useMatch, useNavigate } from "@tanstack/react-router"
 import { formatDistanceToNowStrict } from "date-fns"
 import {
+  GaugeIcon,
   MoonIcon,
   PlusIcon,
   SearchIcon,
@@ -222,6 +223,11 @@ export function AppSidebar() {
             >
               <UserButton showName appearance={userButtonAppearance}>
                 <UserButton.MenuItems>
+                  <UserButton.Action
+                    label="Usage"
+                    labelIcon={<GaugeIcon size={16} />}
+                    onClick={() => navigate({ to: "/usage" })}
+                  />
                   <UserButton.Action
                     label={isDark ? "Light mode" : "Dark mode"}
                     labelIcon={

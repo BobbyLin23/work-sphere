@@ -36,6 +36,7 @@ import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { createBotSchema } from "@/db/schema"
+import { useBillingError } from "@/hooks/use-billing-error"
 import { createBot, deleteBot, updateBot } from "@/lib/bots"
 
 const JOB_PRESETS = [
@@ -146,6 +147,7 @@ function BotDialog({
   const router = useRouter()
   const createBotFn = useServerFn(createBot)
   const updateBotFn = useServerFn(updateBot)
+  const handleBillingError = useBillingError()
 
   const form = useForm({
     defaultValues: initialValues(bot),
@@ -154,7 +156,14 @@ function BotDialog({
       if (bot) {
         await updateBotFn({ data: { ...value, id: bot.id } })
       } else {
-        await createBotFn({ data: value })
+        try {
+          await createBotFn({ data: value })
+        } catch (error) {
+          if (handleBillingError(error)) {
+            return
+          }
+          throw error
+        }
       }
       await router.invalidate()
       setOpen(false)

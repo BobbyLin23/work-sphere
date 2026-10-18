@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Spinner } from "@/components/ui/spinner"
+import { useBillingError } from "@/hooks/use-billing-error"
 import { cn } from "@/lib/utils"
 import { getSandboxVncUrl } from "@/queries/sandbox"
 
@@ -83,6 +84,7 @@ function SandboxScreenProvider({
   children,
 }: SandboxScreenProviderProps) {
   const getUrl = useServerFn(getSandboxVncUrl)
+  const handleBillingError = useBillingError()
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState(false)
   const [frameKey, setFrameKey] = useState(0)
@@ -102,15 +104,16 @@ function SandboxScreenProvider({
           setUrl(result)
         }
       })
-      .catch(() => {
+      .catch((caught) => {
         if (!cancelled) {
           setError(true)
+          handleBillingError(caught)
         }
       })
     return () => {
       cancelled = true
     }
-  }, [shouldLoad, url, getUrl, chatId])
+  }, [shouldLoad, url, getUrl, chatId, handleBillingError])
 
   const activeSlot = fullscreen ? dialogSlot : previewSlot
   const rect = useElementRect(activeSlot)

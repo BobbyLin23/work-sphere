@@ -6,6 +6,8 @@ import { and, eq } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
 import { chats } from "@/db/schema"
+import { assertPaidPlan } from "@/lib/billing.server"
+import { assertWithinLimit } from "@/lib/usage.server"
 
 async function assertChatOwner(chatId: string) {
   const { isAuthenticated, userId } = await clerkAuth()
@@ -33,6 +35,7 @@ export const startChatSession = createServerFn({ method: "POST" })
   .validator(chatIdSchema)
   .handler(async ({ data }) => {
     await assertChatOwner(data.chatId)
+    await assertWithinLimit(await assertPaidPlan(), "ai_tokens")
     return startSession({ chatId: data.chatId })
   })
 
@@ -40,6 +43,7 @@ export const mintChatAccessToken = createServerFn({ method: "POST" })
   .validator(chatIdSchema)
   .handler(async ({ data }) => {
     await assertChatOwner(data.chatId)
+    await assertWithinLimit(await assertPaidPlan(), "ai_tokens")
     return auth.createPublicToken({
       scopes: {
         read: { sessions: data.chatId },

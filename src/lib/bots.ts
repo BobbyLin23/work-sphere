@@ -1,6 +1,6 @@
 import { auth } from "@clerk/tanstack-react-start/server"
 import { createServerFn } from "@tanstack/react-start"
-import { and, eq, inArray } from "drizzle-orm"
+import { and, count, eq, inArray } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
 import {
@@ -10,7 +10,9 @@ import {
   createBotSchema,
   updateBotSchema,
 } from "@/db/schema"
+import { assertPaidPlan } from "@/lib/billing.server"
 import { createSandbox, deleteSandbox } from "@/lib/daytona.server"
+import { MAX_BOTS, USAGE_LIMIT_REACHED } from "@/lib/usage"
 
 export const deleteBot = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.string() }))
@@ -72,6 +74,15 @@ export const createBot = createServerFn({ method: "POST" })
     const { isAuthenticated, userId } = await auth()
     if (!isAuthenticated) {
       throw new Error("Unauthorized")
+    }
+
+    await assertPaidPlan()
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(bots)
+      .where(eq(bots.userId, userId))
+    if (total >= MAX_BOTS) {
+      throw new Error(USAGE_LIMIT_REACHED)
     }
 
     const sandboxId = await createSandbox()

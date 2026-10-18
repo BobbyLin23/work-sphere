@@ -1,6 +1,7 @@
-import { tool } from "ai"
+import { type Tool, tool } from "ai"
 import { z } from "zod"
 import { getStartedSandbox } from "../lib/daytona.server"
+import { assertWithinLimit, recordUsage } from "../lib/usage.server"
 
 const MAX_OUTPUT_CHARS = 20_000
 
@@ -10,7 +11,12 @@ function truncate(text: string) {
     : text
 }
 
-export function createSandboxTools(sandboxId: string | null | undefined) {
+type UsageOwner = { userId: string; botId: string }
+
+export function createSandboxTools(
+  sandboxId: string | null | undefined,
+  usageOwner?: UsageOwner
+) {
   let sandboxPromise: ReturnType<typeof getStartedSandbox> | undefined
 
   const getSandbox = () => {
@@ -46,7 +52,7 @@ export function createSandboxTools(sandboxId: string | null | undefined) {
     }
   }
 
-  return {
+  const tools = {
     bash: tool({
       description:
         "Run a shell command in your sandbox. Returns the exit code and combined output.",
@@ -222,4 +228,40 @@ export function createSandboxTools(sandboxId: string | null | undefined) {
       }),
     }),
   }
+
+  return meterTools(tools, usageOwner)
+}
+
+// Charges the wall-clock time of every sandbox tool call to the owner, and
+// refuses new calls once the period allowance is spent.
+function meterTools<T extends Record<string, Tool>>(
+  tools: T,
+  owner: UsageOwner | undefined
+): T {
+  if (!owner) {
+    return tools
+  }
+  return Object.fromEntries(
+    Object.entries(tools).map(([name, definition]) => {
+      const execute = definition.execute
+      if (!execute) {
+        return [name, definition]
+      }
+      const metered: typeof execute = async (input, options) => {
+        await assertWithinLimit(owner.userId, "sandbox_seconds")
+        const startedAt = Date.now()
+        try {
+          return await execute(input, options)
+        } finally {
+          await recordUsage({
+            userId: owner.userId,
+            kind: "sandbox_seconds",
+            amount: Math.max(1, (Date.now() - startedAt) / 1000),
+            botId: owner.botId,
+          })
+        }
+      }
+      return [name, { ...definition, execute: metered }]
+    })
+  ) as T
 }

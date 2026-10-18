@@ -5,6 +5,8 @@ import { asc } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "../db"
 import type { bots } from "../db/schema"
+import { USAGE_LIMIT_REACHED } from "../lib/usage"
+import { getRemaining, recordUsage } from "../lib/usage.server"
 import { createHandoffTool } from "./handoff-tool"
 import { createSandboxTools } from "./sandbox-tools"
 
@@ -92,7 +94,10 @@ export const workSphereChat = chat.agent({
   tools: async ({ chatId, clientData }) => {
     const { bot, teammates } = await findChatBot(chatId, clientData?.botId)
     return {
-      ...createSandboxTools(bot?.sandboxId),
+      ...createSandboxTools(
+        bot?.sandboxId,
+        bot && { userId: bot.userId, botId: bot.id }
+      ),
       ...(teammates.length > 0
         ? { handoff: createHandoffTool(teammates) }
         : {}),
@@ -104,13 +109,36 @@ export const workSphereChat = chat.agent({
       messageMetadata: ({ part }) =>
         part.type === "start" ? { botId: bot?.id } : undefined,
     })
+    const remainingTokens = bot
+      ? await getRemaining(bot.userId, "ai_tokens")
+      : 0
+    if (remainingTokens <= 0) {
+      throw new Error(USAGE_LIMIT_REACHED)
+    }
+    let turnTokens = 0
     return streamText({
       model: deepSeek("deepseek-flash"),
       instructions: buildInstructions(bot, teammates),
       messages,
       tools,
-      stopWhen: [hasToolCall("handoff"), isStepCount(30)],
+      stopWhen: [
+        hasToolCall("handoff"),
+        isStepCount(30),
+        () => turnTokens >= remainingTokens,
+      ],
       abortSignal: signal,
+      onStepFinish: async ({ usage }) => {
+        const tokens = (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0)
+        turnTokens += tokens
+        if (bot) {
+          await recordUsage({
+            userId: bot.userId,
+            kind: "ai_tokens",
+            amount: tokens,
+            botId: bot.id,
+          })
+        }
+      },
     })
   },
 })
