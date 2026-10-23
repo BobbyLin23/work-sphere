@@ -205,7 +205,7 @@ function ChatView({
                 )}
                 <MessageContent>
                   {recipient && (
-                    <p className="whitespace-pre-wrap break-words">
+                    <p className="wrap-break-word whitespace-pre-wrap">
                       <Badge
                         variant="outline"
                         className="mr-1.5 h-6 max-w-40 gap-1.5 pl-1 align-middle"

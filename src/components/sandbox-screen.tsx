@@ -131,7 +131,7 @@ function SandboxScreenProvider({
           tabIndex={fullscreen ? 0 : -1}
           allow="clipboard-read; clipboard-write"
           className={cn(
-            "fixed z-[60] border-0 bg-background",
+            "fixed z-60 border-0 bg-background",
             !(rect && activeSlot) && "invisible",
             !fullscreen && "pointer-events-none"
           )}

@@ -29,12 +29,7 @@ function GroupChatAvatar({ seeds, className }: GroupChatAvatarProps) {
   )
 
   return (
-    <div
-      className={cn(
-        "relative size-8 shrink-0 [container-type:size]",
-        className
-      )}
-    >
+    <div className={cn("@container-size relative size-8 shrink-0", className)}>
       {visible.map((seed, index) => (
         <ChatAvatar
           key={seed}
