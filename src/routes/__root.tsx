@@ -21,7 +21,11 @@ export const Route = createRootRoute({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "TanStack Start Starter",
+        title: "Work Sphere",
+      },
+      {
+        name: "description",
+        content: "Chat with AI bots that work for you in their own sandboxes.",
       },
     ],
     links: [
